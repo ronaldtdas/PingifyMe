@@ -17,7 +17,7 @@ PingifyMe is a user-friendly desktop application written in C# (.NET 8) for Wind
 **Getting Started (Using the Downloaded Executable):**
 
 1. **Download:**
-    * **Windows (x64):** Download Link Here: COMING SOON
+    * **Windows (x64):** Download Link Here: [v1.0.0](https://github.com/ronaldtdas/PingifyMe/releases/download/Latest/PingifyMe.exe)
 2. **Run the Application:** Double-click the downloaded `.exe` file.
     * The application window will open.
     * Enter IP addresses (one per line) in the designated textbox.
