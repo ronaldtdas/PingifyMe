@@ -37,7 +37,7 @@
 			// 
 			// txtIP
 			// 
-			txtIP.BackColor = Color.Gray;
+			txtIP.BackColor = Color.MidnightBlue;
 			txtIP.BorderStyle = BorderStyle.FixedSingle;
 			txtIP.Dock = DockStyle.Fill;
 			txtIP.ForeColor = Color.WhiteSmoke;
@@ -51,7 +51,7 @@
 			// 
 			// rtxtLog
 			// 
-			rtxtLog.BackColor = SystemColors.HotTrack;
+			rtxtLog.BackColor = Color.MidnightBlue;
 			rtxtLog.BorderStyle = BorderStyle.FixedSingle;
 			rtxtLog.Dock = DockStyle.Fill;
 			rtxtLog.Font = new Font("MS Gothic", 12F, FontStyle.Regular, GraphicsUnit.Point, 0);
@@ -59,6 +59,7 @@
 			rtxtLog.Location = new Point(100, 0);
 			rtxtLog.Margin = new Padding(0);
 			rtxtLog.Name = "rtxtLog";
+			rtxtLog.ReadOnly = true;
 			tableLayoutPanel1.SetRowSpan(rtxtLog, 2);
 			rtxtLog.Size = new Size(464, 270);
 			rtxtLog.TabIndex = 1;

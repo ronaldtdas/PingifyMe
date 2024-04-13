@@ -1,19 +1,33 @@
+using System;
 using System.ComponentModel;
+using System.IO;
 using System.Net;
 using System.Net.NetworkInformation;
+using System.Threading.Tasks;
+using System.Windows.Forms;
+using Timer = System.Threading.Timer;
 
 namespace PingifyMeProject
 {
 	public partial class frmMain : Form
 	{
 		private BackgroundWorker worker;
+		int delay = 1000; // Delay in milliseconds
+		int timeout = 1000; // Delay in milliseconds
 		public frmMain()
 		{
 			InitializeComponent();
-			txtIP.Text = "192.168.0.1";
+			this.Focus();
 		}
-		private void btnAction_Click(object sender, EventArgs e)
+
+		private async void btnAction_Click(object sender, EventArgs e)
 		{
+			var ipAddresses = txtIP.Lines; // Get IP addresses from TextBox
+			if (ipAddresses.Length == 0)
+			{
+				MessageBox.Show("Please enter at least one IP address", "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+				return;
+			}
 			if (btnAction.Text == "Start")
 			{
 				worker = new BackgroundWorker();
@@ -22,6 +36,11 @@ namespace PingifyMeProject
 				worker.RunWorkerCompleted += Worker_RunWorkerCompleted;
 				worker.RunWorkerAsync();
 				btnAction.Text = "Stop";
+
+				txtIP.Enabled = false;
+				rtxtLog.Clear();
+				delay = delay * 1; //user input for delay
+				timeout = timeout * 10; //user input for delay
 			}
 			else
 			{
@@ -29,47 +48,7 @@ namespace PingifyMeProject
 				{
 					worker.CancelAsync();
 				}
-				btnAction.Text = "Start";
-			}
-		}
 
-
-
-
-
-
-		private void Worker_DoWork(object sender, DoWorkEventArgs e)
-		{
-			var ipAddresses = txtIP.Lines; // Get IP addresses from TextBox
-			while (!worker.CancellationPending)
-			{
-				string result = $"{DateTime.Now:dd/MM/yyyy HH:mm:ss}:\n";
-				foreach (var ipAddress in ipAddresses)
-				{
-					string response = PingAddress(ipAddress);
-					result += response;
-					Thread.Sleep(1000); // Ping every second
-				}
-				// Invoke to update UI with each ping result
-				this.Invoke((MethodInvoker)delegate
-				{
-					rtxtLog.AppendText(result + Environment.NewLine);
-					rtxtLog.ScrollToCaret(); // Auto scroll to bottom
-				});
-			}
-		}
-
-
-
-
-		private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
-		{
-			if (e.Error != null)
-			{
-				// Handle error
-			}
-			else
-			{
 				// Prompt to export log
 				if (MessageBox.Show("Export log to a text file?", "Export Log", MessageBoxButtons.YesNo) == DialogResult.Yes)
 				{
@@ -80,18 +59,55 @@ namespace PingifyMeProject
 						File.WriteAllText(saveFileDialog.FileName, rtxtLog.Text);
 					}
 				}
+
+				txtIP.Enabled = true;
+				btnAction.Text = "Start";
+				delay = 1000; //reset delay
+				timeout = 1000; //reset timeout
 			}
 		}
-		private string PingAddress(string ipAddress)
+
+		private async void TimerCallback(object state)
+		{
+			string logResult = $"{DateTime.Now:dd/MM/yyyy HH:mm:ss}:\n";
+			var ipAddresses = txtIP.Lines; // Get IP addresses from TextBox
+			foreach (var ipAddress in ipAddresses)
+			{
+				string response = await PingAddressAsync(ipAddress);
+				logResult += response;
+			}
+			// Invoke to update UI with each ping result
+			this.Invoke((MethodInvoker)delegate
+			{
+				rtxtLog.AppendText(logResult + Environment.NewLine);
+				rtxtLog.ScrollToCaret(); // Auto scroll to bottom
+			});
+		}
+		private void Worker_DoWork(object sender, DoWorkEventArgs e)
+		{
+			// Log results every second
+			Timer timer = new Timer(TimerCallback, null, 0, delay);
+
+			while (!worker.CancellationPending)
+			{
+			}
+			timer.Dispose(); // Stop the timer
+		}
+
+		private async Task<string> PingAddressAsync(string ipAddress)
 		{
 			try
 			{
 				using (var ping = new Ping())
 				{
-					var reply = ping.Send(ipAddress);
+					var reply = await ping.SendPingAsync(ipAddress, timeout);
 					if (reply.Status == IPStatus.Success)
 					{
 						return $"Reply from {ipAddress}: bytes={reply.Buffer.Length} time={reply.RoundtripTime}ms TTL={reply.Options.Ttl}\n";
+					}
+					else if (reply.Status == IPStatus.TimedOut)
+					{
+						return $"Request timed out for {ipAddress}\n";
 					}
 					else
 					{
@@ -105,9 +121,16 @@ namespace PingifyMeProject
 			}
 		}
 
-		private void txtIP_TextChanged(object sender, EventArgs e)
+		private void Worker_RunWorkerCompleted(object sender, RunWorkerCompletedEventArgs e)
 		{
+			if (e.Error != null)
+			{
+				// Handle error
+			}
+			else
+			{
 
+			}
 		}
 	}
 }
